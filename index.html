@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RegistreDPO</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--ink:#0d1117;--paper:#f6f8ff;--surface:#fff;--blue:#2563eb;--blue-dark:#1d4ed8;--blue-light:#eff4ff;--blue-mid:#dbeafe;--border:#e2e8f0;--muted:#64748b;--subtle:#94a3b8;--success:#059669;--warning:#d97706;--danger:#dc2626;--shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(37,99,235,.06);--shadow-sm:0 1px 3px rgba(0,0,0,.06)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sora',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#f6f8ff,#eff4ff)}
+.login-card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:48px 40px;width:400px;box-shadow:0 4px 6px rgba(0,0,0,.04),0 20px 40px rgba(37,99,235,.08)}
+.login-logo{font-size:15px;font-weight:700;margin-bottom:36px;display:flex;align-items:center;gap:8px}
+.login-badge{background:var(--blue-light);color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:4px;letter-spacing:1.5px;border:1px solid var(--blue-mid)}
+.login-title{font-size:24px;font-weight:700;letter-spacing:-.6px;margin-bottom:8px}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:36px;line-height:1.5}
+.google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:13px 20px;font-family:'Sora',sans-serif;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.google-btn:hover{border-color:#4285f4;box-shadow:0 2px 8px rgba(66,133,244,.2);background:#fafbff}
+.google-btn:disabled{opacity:.6;cursor:not-allowed}
+.google-icon{width:20px;height:20px;flex-shrink:0}
+.login-msg{border-radius:8px;padding:11px 14px;font-size:12.5px;margin-top:16px;display:none}
+.login-msg.error{background:#fef2f2;border:1px solid #fecaca;color:var(--danger)}
+.login-msg.info{background:var(--blue-light);border:1px solid var(--blue-mid);color:var(--blue-dark)}
+.login-footer{margin-top:28px;padding-top:20px;border-top:1px solid var(--border);font-size:11.5px;color:var(--subtle);text-align:center;line-height:1.6}
+.setup-hint{background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:10px;padding:14px 16px;font-size:12.5px;color:var(--blue-dark);margin-bottom:24px;display:none}
+.setup-hint strong{display:block;margin-bottom:4px}
+.setup-hint a{color:var(--blue);font-weight:600;text-decoration:none}
+#config-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+#config-modal.open{display:flex}
+.config-box{background:#fff;border-radius:16px;padding:36px;width:480px;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.config-box h3{font-size:17px;font-weight:700;margin-bottom:6px}
+.config-desc{font-size:12.5px;color:var(--muted);margin-bottom:24px;line-height:1.5}
+.config-group{margin-bottom:16px}
+.config-group label{display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-family:'JetBrains Mono',monospace;margin-bottom:5px}
+.config-group input{width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink);outline:none;background:var(--paper);transition:border-color .15s}
+.config-group input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1);background:#fff}
+.config-actions{display:flex;gap:10px;margin-top:22px}
+header{background:#fff;border-bottom:1px solid var(--border);padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.logo{font-size:15px;font-weight:700;letter-spacing:-.3px;display:flex;align-items:center;gap:10px}
+.logo-badge{background:var(--blue-light);color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:4px;letter-spacing:1.5px;border:1px solid var(--blue-mid)}
+.header-right{display:flex;align-items:center;gap:12px}
+.header-user{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:8px}
+.user-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid var(--blue-mid)}
+.user-avatar-fallback{width:28px;height:28px;background:var(--blue-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--blue);border:2px solid var(--blue-mid)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.15);flex-shrink:0}
+.btn-sm{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--muted);font-family:'Sora',sans-serif;transition:all .15s}
+.btn-sm:hover{background:var(--paper);color:var(--ink)}
+#app{display:none}
+main{max-width:1280px;margin:0 auto;padding:32px 40px 60px}
+.page-title{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:3px}
+.page-sub{color:var(--muted);font-size:12.5px;margin-bottom:26px}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:26px}
+.tab{padding:9px 20px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--muted);transition:all .15s;user-select:none}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+.tab:hover:not(.active){color:var(--ink)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;box-shadow:var(--shadow-sm);transition:box-shadow .15s}
+.stat-card:hover{box-shadow:var(--shadow)}
+.stat-label{font-size:10.5px;color:var(--subtle);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-family:'JetBrains Mono',monospace}
+.stat-value{font-size:28px;font-weight:700;color:var(--ink);letter-spacing:-1px}
+.stat-sub{font-size:11px;color:var(--subtle);margin-top:2px}
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap}
+.toolbar-left{display:flex;gap:10px;flex-wrap:wrap}
+.search-input{padding:8px 14px;border:1px solid var(--border);border-radius:7px;font-family:'Sora',sans-serif;font-size:13px;width:220px;background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
+.search-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.filter-select{padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:#fff;outline:none;font-family:'Sora',sans-serif}
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm)}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--paper);border-bottom:1px solid var(--border)}
+th{padding:10px 16px;text-align:left;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--subtle);font-family:'JetBrains Mono',monospace;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--blue-light)}
+td{padding:12px 16px;font-size:13px;vertical-align:middle}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.badge-red{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.badge-orange{background:#fffbeb;color:#d97706;border:1px solid #fed7aa}
+.badge-green{background:#f0fdf4;color:#059669;border:1px solid #bbf7d0}
+.badge-blue{background:var(--blue-light);color:var(--blue);border:1px solid var(--blue-mid)}
+.badge-gray{background:var(--paper);color:var(--subtle);border:1px solid var(--border)}
+.action-btn{background:none;border:none;cursor:pointer;padding:5px 8px;border-radius:5px;font-size:14px;transition:background .1s}
+.action-btn:hover{background:var(--blue-light)}
+.empty-state{text-align:center;padding:60px 20px;color:var(--subtle)}
+.empty-state .icon{font-size:36px;margin-bottom:12px;opacity:.5}
+.empty-state p{font-size:13px}
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--subtle);gap:10px;font-size:13px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;box-shadow:var(--shadow-sm)}
+.form-section-title{font-size:11px;font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);color:var(--muted);display:flex;align-items:center;gap:10px;text-transform:uppercase;letter-spacing:1px;font-family:'JetBrains Mono',monospace}
+.section-num{background:var(--blue);color:#fff;width:20px;height:20px;border-radius:5px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.form-grid.cols-3{grid-template-columns:1fr 1fr 1fr}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group.full{grid-column:1/-1}
+label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-family:'JetBrains Mono',monospace}
+label .req{color:var(--blue);margin-left:2px}
+input[type=text],input[type=date],select,textarea{border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-family:'Sora',sans-serif;font-size:13px;color:var(--ink);background:var(--paper);transition:border-color .15s,box-shadow .15s;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1);background:#fff}
+textarea{resize:vertical;min-height:80px}
+.radio-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;background:var(--paper);transition:all .12s;user-select:none;font-weight:500;margin-right:8px}
+.radio-pill input{display:none}
+.radio-pill:has(input:checked){background:var(--blue-light);border-color:var(--blue);color:var(--blue);font-weight:600}
+.checkbox-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.checkbox-item{display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:var(--paper);transition:all .12s;font-weight:500}
+.checkbox-item:has(input:checked){background:var(--blue-light);border-color:var(--blue);color:var(--blue)}
+.checkbox-item input{accent-color:var(--blue)}
+.form-actions{display:flex;justify-content:space-between;align-items:center;margin-top:28px;padding-top:20px;border-top:1px solid var(--border)}
+.form-actions-right{display:flex;gap:10px}
+.btn{padding:9px 22px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:'Sora',sans-serif}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-ghost:hover{background:var(--paper);color:var(--ink)}
+.btn-primary{background:var(--blue);color:#fff;box-shadow:0 1px 3px rgba(37,99,235,.3)}
+.btn-primary:hover{background:var(--blue-dark)}
+.btn-primary:disabled{background:#cbd5e1;box-shadow:none;cursor:not-allowed}
+.btn-danger{background:#fef2f2;color:var(--danger);border:1px solid #fecaca}
+.btn-danger:hover{background:#fee2e2}
+.edit-banner{background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:8px;padding:10px 16px;font-size:12.5px;color:var(--blue-dark);margin-bottom:20px;display:none;align-items:center;gap:8px;font-weight:500}
+.edit-banner.show{display:flex}
+.audit-entry{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);font-size:12.5px;align-items:flex-start}
+.audit-entry:last-child{border-bottom:none}
+.audit-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);margin-top:4px;flex-shrink:0}
+.sql-panel{background:#0f172a;border-radius:12px;padding:28px;color:#e2e8f0;margin-bottom:20px;border:1px solid #1e293b}
+.sql-panel h3{font-size:16px;font-weight:700;margin-bottom:14px}
+.sql-block{background:#020617;border:1px solid #1e293b;border-radius:8px;padding:18px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#94a3b8;line-height:1.8;white-space:pre;overflow-x:auto;margin-bottom:12px}
+.kw{color:#60a5fa}.st{color:#34d399}.cm{color:#334155}.ty{color:#a78bfa}
+.copy-btn{background:#1e293b;color:#94a3b8;border:none;padding:6px 14px;border-radius:5px;font-size:11px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:background .2s}
+.copy-btn:hover{background:#334155;color:#e2e8f0}
+.setup-steps{list-style:none;counter-reset:steps}
+.setup-steps li{counter-increment:steps;display:flex;gap:14px;padding:12px 0;border-bottom:1px solid #1e293b;font-size:13px;color:#94a3b8;align-items:flex-start}
+.setup-steps li:last-child{border-bottom:none}
+.setup-steps li::before{content:counter(steps);background:var(--blue);color:#fff;min-width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:1px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;z-index:999;transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:10px;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.15);font-weight:500}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{background:#064e3b}
+.toast.error{background:#7f1d1d}
+@media(max-width:768px){main{padding:20px}header{padding:0 16px}.stats-row{grid-template-columns:1fr 1fr}.form-grid,.form-grid.cols-3{grid-template-columns:1fr}.checkbox-grid{grid-template-columns:1fr 1fr}.login-card{width:calc(100% - 32px);padding:32px 24px}}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">RegistreDPO <span class="login-badge">MVP</span></div>
+    <div class="setup-hint" id="setup-hint">
+      <strong>⚙️ Configuration requise</strong>
+      Supabase n'est pas encore configuré.
+      <a href="#" onclick="openConfig()">Configurer maintenant →</a>
+    </div>
+    <h2 class="login-title">Bienvenue</h2>
+    <p class="login-sub">Connectez-vous avec votre compte Google pour accéder au registre des traitements RGPD de votre organisation.</p>
+    <button class="google-btn" id="google-btn" onclick="signInWithGoogle()">
+      <svg class="google-icon" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continuer avec Google
+    </button>
+    <div class="login-msg" id="login-msg"></div>
+    <div class="login-footer">
+      Accès réservé aux membres autorisés.<br>Contactez votre DPO pour obtenir l'accès.<br><br>
+      <a href="#" onclick="openConfig()" style="color:var(--subtle);font-family:'JetBrains Mono',monospace;font-size:10px;text-decoration:none">⚙ Configurer Supabase</a>
+    </div>
+  </div>
+</div>
+
+<div id="config-modal">
+  <div class="config-box">
+    <h3>Connexion Supabase</h3>
+    <p class="config-desc">Entrez vos credentials Supabase. Sauvegardés localement dans votre navigateur.</p>
+    <div class="config-group"><label>Project URL</label><input type="text" id="sb-url" placeholder="https://xxxx.supabase.co"/></div>
+    <div class="config-group"><label>Publishable (anon) Key</label><input type="text" id="sb-key" placeholder="eyJhbGci..."/></div>
+    <div class="config-actions">
+      <button class="btn btn-primary" onclick="saveConfig()">Connecter</button>
+      <button class="btn btn-ghost" onclick="closeConfig()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="logo">RegistreDPO <span class="logo-badge">MVP</span></div>
+    <div class="header-right">
+      <div class="header-user">
+        <div class="status-dot"></div>
+        <span id="user-name"></span>
+        <div id="user-avatar-wrap"></div>
+      </div>
+      <button class="btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn-sm" onclick="signOut()">Déconnexion</button>
+    </div>
+  </header>
+  <main>
+    <h1 class="page-title">Registre des Traitements</h1>
+    <p class="page-sub">Article 30 RGPD · Gestion centralisée des activités de traitement</p>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('dashboard')">📊 Tableau de bord</div>
+      <div class="tab" onclick="switchTab('form')">➕ Nouveau traitement</div>
+      <div class="tab" onclick="switchTab('audit')">📋 Journal d'audit</div>
+      <div class="tab" onclick="switchTab('setup')">🛠 Déploiement</div>
+    </div>
+
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Total traitements</div><div class="stat-value" id="statTotal">—</div><div class="stat-sub">enregistrés</div></div>
+        <div class="stat-card"><div class="stat-label">Données sensibles</div><div class="stat-value" id="statSensibles" style="color:var(--danger)">—</div><div class="stat-sub">Art. 9 RGPD</div></div>
+        <div class="stat-card"><div class="stat-label">AIPD requise</div><div class="stat-value" id="statAIPD" style="color:var(--warning)">—</div><div class="stat-sub">à mener</div></div>
+        <div class="stat-card"><div class="stat-label">Responsables</div><div class="stat-value" id="statRespo">—</div><div class="stat-sub">distincts</div></div>
+      </div>
+      <div class="table-toolbar">
+        <div class="toolbar-left">
+          <input class="search-input" type="text" placeholder="🔍 Rechercher…" id="searchInput" oninput="filterTable()"/>
+          <select class="filter-select" id="filterBase" onchange="filterTable()">
+            <option value="">Toutes bases légales</option>
+            <option>Consentement</option><option>Contrat</option><option>Obligation légale</option><option>Intérêt légitime</option><option>Mission d'intérêt public</option><option>Intérêts vitaux</option>
+          </select>
+          <select class="filter-select" id="filterStatut" onchange="filterTable()">
+            <option value="">Tous statuts</option><option>Actif</option><option>En révision</option><option>Archivé</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="newTraitement()">+ Ajouter</button>
+      </div>
+      <div class="table-card"><div id="tableBody"><div class="loading"><div class="spinner"></div> Chargement…</div></div></div>
+    </div>
+
+    <div class="tab-content" id="tab-form">
+      <div class="edit-banner" id="edit-banner">✏️ <span id="edit-banner-text"></span><button class="btn-sm" style="margin-left:auto" onclick="cancelEdit()">Annuler</button></div>
+      <div class="form-card">
+        <div class="form-section-title"><span class="section-num">1</span> Identification</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Nom <span class="req">*</span></label><input type="text" id="f_nom" placeholder="ex : Gestion des candidatures"/></div>
+          <div class="form-group"><label>Responsable <span class="req">*</span></label><input type="text" id="f_responsable" placeholder="ex : DRH"/></div>
+          <div class="form-group"><label>Finalité <span class="req">*</span></label><input type="text" id="f_finalite" placeholder="ex : Recrutement"/></div>
+          <div class="form-group"><label>Date de création</label><input type="date" id="f_date"/></div>
+          <div class="form-group full"><label>Description</label><textarea id="f_description" placeholder="Décrivez le traitement…"></textarea></div>
+        </div>
+        <div class="form-section-title"><span class="section-num">2</span> Base légale & données</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Base légale <span class="req">*</span></label><select id="f_base_legale"><option value="">Sélectionner…</option><option>Consentement</option><option>Contrat</option><option>Obligation légale</option><option>Intérêt légitime</option><option>Mission d'intérêt public</option><option>Intérêts vitaux</option></select></div>
+          <div class="form-group"><label>Données sensibles (Art. 9)</label><div style="margin-top:4px"><label class="radio-pill"><input type="radio" name="sensible" value="non" checked> Non</label><label class="radio-pill"><input type="radio" name="sensible" value="oui"> Oui</label></div></div>
+          <div class="form-group full"><label>Catégories de données</label>
+            <div class="checkbox-grid">
+              <label class="checkbox-item"><input type="checkbox" name="cat" value="Identité"> Identité</label>
+              <label class="checkbox-item"><input type="checkbox" name="cat" value="Contact"> Contact</label>
+              <label class="checkbox-item"><input type="checkbox" name="cat" value="Économique"> Économique</label>
+              <label class="checkbox-item"><input type="checkbox" name="cat" value="Santé"> Santé</label>
+              <label class="checkbox-item"><input type="checkbox" name="cat" value="Biométrique"> Biométrique</label>
+              <label class="checkbox-item"><input type="checkbox" name="cat" value="Localisation"> Localisation</label>
+              <label class="checkbox-item"><input type="checkbox" name="cat" value="Comportement"> Comportement</label>
+              <label class="checkbox-item"><input type="checkbox" name="cat" value="Opinions"> Opinions politiques/syndicales</label>
+              <label class="checkbox-item"><input type="checkbox" name="cat" value="Autre"> Autre</label>
+            </div>
+          </div>
+          <div class="form-group"><label>Durée de conservation</label><input type="text" id="f_duree" placeholder="ex : 5 ans"/></div>
+          <div class="form-group"><label>Personnes concernées</label><input type="text" id="f_personnes" placeholder="ex : Employés, clients"/></div>
+        </div>
+        <div class="form-section-title"><span class="section-num">3</span> Sécurité & transferts</div>
+        <div class="form-grid cols-3">
+          <div class="form-group"><label>AIPD requise ?</label><select id="f_aipd"><option value="Non">Non</option><option value="Oui">Oui</option><option value="À évaluer">À évaluer</option></select></div>
+          <div class="form-group"><label>Transfert hors UE ?</label><select id="f_transfert"><option value="Non">Non</option><option value="Oui">Oui</option></select></div>
+          <div class="form-group"><label>Statut</label><select id="f_statut"><option value="Actif">Actif</option><option value="En révision">En révision</option><option value="Archivé">Archivé</option></select></div>
+          <div class="form-group full"><label>Sous-traitants</label><textarea id="f_soustraitants" placeholder="Listez les sous-traitants…" style="min-height:60px"></textarea></div>
+          <div class="form-group full"><label>Mesures de sécurité</label><textarea id="f_securite" placeholder="Chiffrement, pseudonymisation…" style="min-height:60px"></textarea></div>
+        </div>
+        <div class="form-actions">
+          <div><button class="btn btn-danger" id="deleteBtn" style="display:none" onclick="deleteCurrentEdit()">🗑 Supprimer</button></div>
+          <div class="form-actions-right">
+            <button class="btn btn-ghost" onclick="resetForm()">Réinitialiser</button>
+            <button class="btn btn-primary" id="submitBtn" onclick="submitForm()">💾 Enregistrer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-audit">
+      <div class="form-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div><h3 style="font-size:15px;font-weight:700">Journal d'audit</h3><p style="font-size:12px;color:var(--muted);margin-top:2px">Toutes les actions sur le registre</p></div>
+          <button class="btn-sm" onclick="loadAudit()">↻ Actualiser</button>
+        </div>
+        <div id="auditBody"><div class="loading"><div class="spinner"></div> Chargement…</div></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-setup">
+      <div class="sql-panel">
+        <h3>🚀 Guide de déploiement complet</h3>
+        <p style="font-size:13px;color:#64748b;margin-bottom:20px">Suivez ces étapes dans l'ordre pour mettre la plateforme en ligne aujourd'hui.</p>
+        <ol class="setup-steps">
+          <li><strong style="color:#fff">Google OAuth :</strong> <a href="https://console.cloud.google.com" target="_blank" style="color:#60a5fa">console.cloud.google.com</a> → Create Project → APIs &amp; Services → Credentials → Create OAuth 2.0 Client ID → Web Application. Authorized redirect URI : <code style="color:#34d399">https://VOTRE-ID.supabase.co/auth/v1/callback</code></li>
+          <li><strong style="color:#fff">Supabase Google Provider :</strong> Dashboard → Authentication → Providers → Google → coller Client ID &amp; Client Secret → Save.</li>
+          <li><strong style="color:#fff">SQL :</strong> Supabase → SQL Editor → New Query → copier le script ci-dessous → Run.</li>
+          <li><strong style="color:#fff">GitHub :</strong> Créez un repo privé → uploadez <code style="color:#34d399">index.html</code> + <code style="color:#34d399">netlify.toml</code> (tous deux dans ce zip).</li>
+          <li><strong style="color:#fff">Netlify :</strong> netlify.com → Add new site → Import from Git → sélectionnez votre repo → Deploy.</li>
+          <li><strong style="color:#fff">URL callback :</strong> Supabase → Authentication → URL Configuration → Site URL = votre URL Netlify → Redirect URLs = même URL.</li>
+          <li>✅ <strong style="color:#fff">Partagez l'URL</strong> Netlify à votre collègue. Il se connecte avec son compte Google, c'est tout.</li>
+        </ol>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-sm);margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <h3 style="font-size:15px;font-weight:700">Script SQL</h3>
+          <button class="copy-btn" onclick="copyEl('sqlBlock')">📋 Copier</button>
+        </div>
+        <div class="sql-block" id="sqlBlock"><span class="cm">-- RegistreDPO · Tables (Supabase SQL Editor)</span>
+
+<span class="kw">CREATE TABLE IF NOT EXISTS</span> traitements (
+  id                <span class="ty">UUID DEFAULT</span> gen_random_uuid() <span class="kw">PRIMARY KEY</span>,
+  created_at        <span class="ty">TIMESTAMPTZ DEFAULT</span> now(),
+  created_by        <span class="ty">UUID REFERENCES</span> auth.users(id),
+  updated_at        <span class="ty">TIMESTAMPTZ</span>,
+  updated_by        <span class="ty">UUID REFERENCES</span> auth.users(id),
+  nom               <span class="ty">TEXT NOT NULL</span>,
+  responsable       <span class="ty">TEXT NOT NULL</span>,
+  finalite          <span class="ty">TEXT NOT NULL</span>,
+  description       <span class="ty">TEXT</span>,
+  date_creation     <span class="ty">DATE</span>,
+  base_legale       <span class="ty">TEXT</span>,
+  donnees_sensibles <span class="ty">BOOLEAN DEFAULT</span> false,
+  categories        <span class="ty">TEXT[]</span>,
+  personnes         <span class="ty">TEXT</span>,
+  duree_conservation <span class="ty">TEXT</span>,
+  aipd_requise      <span class="ty">TEXT DEFAULT</span> <span class="st">'Non'</span>,
+  transfert_hors_ue <span class="ty">BOOLEAN DEFAULT</span> false,
+  sous_traitants    <span class="ty">TEXT</span>,
+  mesures_securite  <span class="ty">TEXT</span>,
+  statut            <span class="ty">TEXT DEFAULT</span> <span class="st">'Actif'</span>
+);
+
+<span class="kw">CREATE TABLE IF NOT EXISTS</span> audit_log (
+  id             <span class="ty">UUID DEFAULT</span> gen_random_uuid() <span class="kw">PRIMARY KEY</span>,
+  created_at     <span class="ty">TIMESTAMPTZ DEFAULT</span> now(),
+  user_email     <span class="ty">TEXT</span>,
+  user_name      <span class="ty">TEXT</span>,
+  action         <span class="ty">TEXT</span>,
+  traitement_nom <span class="ty">TEXT</span>,
+  details        <span class="ty">TEXT</span>
+);
+
+<span class="kw">ALTER TABLE</span> traitements <span class="kw">ENABLE ROW LEVEL SECURITY</span>;
+<span class="kw">ALTER TABLE</span> audit_log <span class="kw">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="kw">CREATE POLICY</span> <span class="st">"authenticated_users"</span> <span class="kw">ON</span> traitements
+  <span class="kw">FOR ALL USING</span> (auth.uid() <span class="kw">IS NOT NULL</span>);
+
+<span class="kw">CREATE POLICY</span> <span class="st">"authenticated_users"</span> <span class="kw">ON</span> audit_log
+  <span class="kw">FOR ALL USING</span> (auth.uid() <span class="kw">IS NOT NULL</span>);</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-sm)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <h3 style="font-size:15px;font-weight:700">netlify.toml</h3>
+          <button class="copy-btn" onclick="copyEl('tomlBlock')">📋 Copier</button>
+        </div>
+        <div class="sql-block" id="tomlBlock"><span class="cm"># netlify.toml — root of your GitHub repo</span>
+
+[build]
+  publish = <span class="st">"."</span>
+
+[[redirects]]
+  from   = <span class="st">"/*"</span>
+  to     = <span class="st">"/index.html"</span>
+  status = 200
+
+[[headers]]
+  for = <span class="st">"/*"</span>
+  [headers.values]
+    X-Frame-Options        = <span class="st">"DENY"</span>
+    X-Content-Type-Options = <span class="st">"nosniff"</span>
+    Referrer-Policy        = <span class="st">"strict-origin-when-cross-origin"</span></div>
+        <div style="background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:8px;padding:14px 16px;font-size:12.5px;color:var(--blue-dark);margin-top:14px">
+          🔐 <strong>Workflow Git :</strong> modifiez <code>index.html</code> → <code>git add . && git commit -m "..." && git push</code> → Netlify redéploie automatiquement en ~30 secondes.
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let sbClient=null,currentUser=null,allData=[],editingId=null,rtChannel=null;
+
+function openConfig(){try{const u=localStorage.getItem('dpo_sb_url'),k=localStorage.getItem('dpo_sb_key');if(u)document.getElementById('sb-url').value=u;if(k)document.getElementById('sb-key').value=k;}catch(e){}document.getElementById('config-modal').classList.add('open');}
+function closeConfig(){document.getElementById('config-modal').classList.remove('open');}
+function saveConfig(){const url=document.getElementById('sb-url').value.trim(),key=document.getElementById('sb-key').value.trim();if(!url||!key){showToast('Remplissez les deux champs.','error');return;}try{localStorage.setItem('dpo_sb_url',url);localStorage.setItem('dpo_sb_key',key);}catch(e){}location.reload();}
+
+function initSupabase(){const url=localStorage.getItem('dpo_sb_url'),key=localStorage.getItem('dpo_sb_key');if(!url||!key){document.getElementById('setup-hint').style.display='block';return false;}try{sbClient=window.supabase.createClient(url,key);return true;}catch(e){showMsg('Erreur: '+e.message,'error');return false;}}
+
+async function signInWithGoogle(){if(!sbClient){document.getElementById('setup-hint').style.display='block';return;}const btn=document.getElementById('google-btn');btn.disabled=true;btn.innerHTML='<div class="spinner" style="border-top-color:#4285f4;margin:0 auto"></div>';try{const{error}=await sbClient.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+window.location.pathname,queryParams:{access_type:'offline',prompt:'select_account'}}});if(error)throw error;}catch(e){showMsg(e.message,'error');btn.disabled=false;btn.innerHTML='<svg class="google-icon" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continuer avec Google';}}
+
+async function checkSession(){if(!sbClient)return;try{const{data}=await sbClient.auth.getSession();if(data.session){currentUser=data.session.user;onLoggedIn();}}catch(e){}sbClient.auth.onAuthStateChange((ev,sess)=>{if(ev==='SIGNED_IN'&&sess){currentUser=sess.user;onLoggedIn();}else if(ev==='SIGNED_OUT'){currentUser=null;showLogin();}});}
+
+function onLoggedIn(){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';const m=currentUser?.user_metadata||{},name=m.full_name||m.name||currentUser?.email||'',avatar=m.avatar_url||m.picture||'';document.getElementById('user-name').textContent=name;const w=document.getElementById('user-avatar-wrap');w.innerHTML=avatar?`<img src="${avatar}" class="user-avatar" alt="${name}"/>`:`<div class="user-avatar-fallback">${name.charAt(0).toUpperCase()}</div>`;loadData();setupRt();}
+function showLogin(){document.getElementById('app').style.display='none';document.getElementById('login-screen').style.display='flex';}
+async function signOut(){if(sbClient){if(rtChannel)sbClient.removeChannel(rtChannel);await sbClient.auth.signOut();}currentUser=null;allData=[];rtChannel=null;showLogin();}
+function showMsg(msg,type){const el=document.getElementById('login-msg');el.textContent=msg;el.className='login-msg '+type;el.style.display='block';}
+
+function setupRt(){if(!sbClient||rtChannel)return;rtChannel=sbClient.channel('rt-traitements').on('postgres_changes',{event:'*',schema:'public',table:'traitements'},()=>loadData()).subscribe();}
+
+async function loadData(){if(!sbClient)return;try{const{data,error}=await sbClient.from('traitements').select('*').order('created_at',{ascending:false});if(error)throw error;allData=data||[];renderTable(allData);updateStats(allData);}catch(e){document.getElementById('tableBody').innerHTML=`<div class="empty-state"><div class="icon">⚠️</div><p>${e.message}</p><p style="font-size:11px;margin-top:6px">Avez-vous exécuté le script SQL ? (onglet Déploiement)</p></div>`;}}
+
+async function logAudit(action,nom,details=''){if(!sbClient||!currentUser)return;const m=currentUser.user_metadata||{};try{await sbClient.from('audit_log').insert([{user_email:currentUser.email,user_name:m.full_name||m.name||currentUser.email,action,traitement_nom:nom,details}]);}catch(e){}}
+
+async function loadAudit(){if(!sbClient)return;document.getElementById('auditBody').innerHTML='<div class="loading"><div class="spinner"></div> Chargement…</div>';try{const{data,error}=await sbClient.from('audit_log').select('*').order('created_at',{ascending:false}).limit(100);if(error)throw error;if(!data.length){document.getElementById('auditBody').innerHTML='<div class="empty-state"><div class="icon">📋</div><p>Aucune action enregistrée.</p></div>';return;}document.getElementById('auditBody').innerHTML=data.map(e=>`<div class="audit-entry"><div class="audit-dot"></div><div style="flex:1"><span style="font-weight:600">${e.action}</span>${e.traitement_nom?`<span style="color:var(--blue)"> · ${e.traitement_nom}</span>`:''}${e.details?`<span style="color:var(--muted)"> — ${e.details}</span>`:''}<div style="margin-top:3px;color:var(--subtle);font-family:'JetBrains Mono',monospace;font-size:10.5px">${e.user_name||e.user_email} · ${fmt(e.created_at)}</div></div></div>`).join('');}catch(e){document.getElementById('auditBody').innerHTML=`<div class="empty-state"><div class="icon">⚠️</div><p>${e.message}</p></div>`;}}
+
+function renderTable(data){if(!data.length){document.getElementById('tableBody').innerHTML='<div class="empty-state"><div class="icon">📋</div><p>Aucun traitement enregistré.</p><p style="margin-top:6px;font-size:11px">Ajoutez votre premier traitement via "+ Ajouter".</p></div>';return;}let h=`<table><thead><tr><th>Traitement</th><th>Responsable</th><th>Base légale</th><th>Sensible</th><th>AIPD</th><th>Statut</th><th>Modifié</th><th></th></tr></thead><tbody>`;data.forEach(t=>{const s=t.donnees_sensibles?'<span class="badge badge-red">Oui</span>':'<span class="badge badge-gray">Non</span>',a=t.aipd_requise==='Oui'?'<span class="badge badge-orange">Oui</span>':t.aipd_requise==='À évaluer'?'<span class="badge badge-blue">Évaluer</span>':'<span class="badge badge-green">Non</span>',st=t.statut==='Actif'?'<span class="badge badge-green">Actif</span>':t.statut==='En révision'?'<span class="badge badge-orange">En révision</span>':'<span class="badge badge-gray">Archivé</span>';h+=`<tr><td><strong>${t.nom}</strong><br><span style="color:var(--muted);font-size:11px">${t.finalite||''}</span></td><td>${t.responsable}</td><td>${t.base_legale||'—'}</td><td>${s}</td><td>${a}</td><td>${st}</td><td style="font-size:11px;color:var(--subtle);font-family:'JetBrains Mono',monospace">${fmt(t.updated_at||t.created_at)}</td><td><button class="action-btn" onclick="editRecord('${t.id}')">✏️</button></td></tr>`;});h+='</tbody></table>';document.getElementById('tableBody').innerHTML=h;}
+function updateStats(data){document.getElementById('statTotal').textContent=data.length;document.getElementById('statSensibles').textContent=data.filter(d=>d.donnees_sensibles).length;document.getElementById('statAIPD').textContent=data.filter(d=>d.aipd_requise==='Oui').length;document.getElementById('statRespo').textContent=new Set(data.map(d=>d.responsable).filter(Boolean)).size;}
+function filterTable(){const q=document.getElementById('searchInput').value.toLowerCase(),b=document.getElementById('filterBase').value,s=document.getElementById('filterStatut').value;renderTable(allData.filter(d=>(!q||[d.nom,d.responsable,d.finalite].some(v=>v?.toLowerCase().includes(q)))&&(!b||d.base_legale===b)&&(!s||d.statut===s)));}
+
+function newTraitement(){resetForm();switchTab('form');}
+function editRecord(id){const t=allData.find(d=>d.id===id);if(!t)return;editingId=id;['nom','responsable','finalite','description','duree_conservation','personnes','sous_traitants','mesures_securite'].forEach(k=>{try{document.getElementById('f_'+k).value=t[k]||'';}catch(e){}});document.getElementById('f_date').value=t.date_creation||'';document.getElementById('f_base_legale').value=t.base_legale||'';document.getElementById('f_aipd').value=t.aipd_requise||'Non';document.getElementById('f_transfert').value=t.transfert_hors_ue?'Oui':'Non';document.getElementById('f_statut').value=t.statut||'Actif';try{document.querySelector(`input[name="sensible"][value="${t.donnees_sensibles?'oui':'non'}"]`).checked=true;}catch(e){}document.querySelectorAll('input[name="cat"]').forEach(c=>c.checked=(t.categories||[]).includes(c.value));document.getElementById('edit-banner').classList.add('show');document.getElementById('edit-banner-text').textContent=`Modification : ${t.nom}`;document.getElementById('submitBtn').textContent='💾 Mettre à jour';document.getElementById('deleteBtn').style.display='block';switchTab('form');}
+function cancelEdit(){resetForm();document.getElementById('edit-banner').classList.remove('show');document.getElementById('submitBtn').textContent='💾 Enregistrer';document.getElementById('deleteBtn').style.display='none';editingId=null;}
+async function deleteCurrentEdit(){if(!editingId||!confirm('Supprimer définitivement ?'))return;const t=allData.find(d=>d.id===editingId);try{const{error}=await sbClient.from('traitements').delete().eq('id',editingId);if(error)throw error;await logAudit('Suppression',t?.nom||'');showToast('Traitement supprimé.','success');cancelEdit();switchTab('dashboard');loadData();}catch(e){showToast('Erreur: '+e.message,'error');}}
+async function submitForm(){const nom=document.getElementById('f_nom').value.trim(),responsable=document.getElementById('f_responsable').value.trim(),finalite=document.getElementById('f_finalite').value.trim();if(!nom||!responsable||!finalite){showToast('Remplissez les champs obligatoires (*)','error');return;}const record={nom,responsable,finalite,description:document.getElementById('f_description').value,date_creation:document.getElementById('f_date').value||null,base_legale:document.getElementById('f_base_legale').value,donnees_sensibles:document.querySelector('input[name="sensible"]:checked')?.value==='oui',categories:[...document.querySelectorAll('input[name="cat"]:checked')].map(c=>c.value),personnes:document.getElementById('f_personnes').value,duree_conservation:document.getElementById('f_duree').value,aipd_requise:document.getElementById('f_aipd').value,transfert_hors_ue:document.getElementById('f_transfert').value==='Oui',sous_traitants:document.getElementById('f_soustraitants').value,mesures_securite:document.getElementById('f_securite').value,statut:document.getElementById('f_statut').value};const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='…';try{if(editingId){record.updated_at=new Date().toISOString();record.updated_by=currentUser?.id;const{error}=await sbClient.from('traitements').update(record).eq('id',editingId);if(error)throw error;await logAudit('Modification',nom,`Statut: ${record.statut}`);showToast('✅ Traitement mis à jour !','success');}else{record.created_by=currentUser?.id;const{error}=await sbClient.from('traitements').insert([record]);if(error)throw error;await logAudit('Création',nom,`Base légale: ${record.base_legale}`);showToast('✅ Traitement enregistré !','success');}cancelEdit();switchTab('dashboard');loadData();}catch(e){showToast('Erreur: '+e.message,'error');}btn.disabled=false;btn.textContent=editingId?'💾 Mettre à jour':'💾 Enregistrer';}
+function resetForm(){['f_nom','f_responsable','f_finalite','f_description','f_date','f_duree','f_personnes','f_soustraitants','f_securite'].forEach(id=>{try{document.getElementById(id).value='';}catch(e){}});document.getElementById('f_base_legale').value='';document.getElementById('f_aipd').value='Non';document.getElementById('f_transfert').value='Non';document.getElementById('f_statut').value='Actif';document.querySelectorAll('input[name="cat"]').forEach(c=>c.checked=false);try{document.querySelector('input[name="sensible"][value="non"]').checked=true;}catch(e){}editingId=null;}
+
+function exportCSV(){if(!allData.length){showToast('Aucune donnée.','error');return;}const h=['Nom','Responsable','Finalité','Base légale','Données sensibles','Catégories','Personnes','Durée conservation','AIPD','Transfert hors UE','Statut','Créé le'],rows=allData.map(t=>[t.nom,t.responsable,t.finalite,t.base_legale||'',(t.donnees_sensibles?'Oui':'Non'),(t.categories||[]).join('; '),t.personnes||'',t.duree_conservation||'',t.aipd_requise||'',(t.transfert_hors_ue?'Oui':'Non'),t.statut||'',fmt(t.created_at)].map(v=>`"${String(v).replace(/"/g,'""')}"`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+[h.join(','),...rows.map(r=>r.join(','))].join('\n')],{type:'text/csv;charset=utf-8;'}));a.download=`registre-dpo-${new Date().toISOString().slice(0,10)}.csv`;a.click();logAudit('Export CSV','',`${allData.length} traitements`);showToast('✅ CSV exporté !','success');}
+
+function switchTab(name){const names=['dashboard','form','audit','setup'];document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById('tab-'+name).classList.add('active');if(name==='audit')loadAudit();}
+function fmt(iso){if(!iso)return'—';return new Date(iso).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type;requestAnimationFrame(()=>t.classList.add('show'));setTimeout(()=>t.classList.remove('show'),3500);}
+function copyEl(id){navigator.clipboard.writeText(document.getElementById(id).innerText).then(()=>showToast('Copié !','success'));}
+
+try{document.getElementById('f_date').valueAsDate=new Date();}catch(e){}
+if(initSupabase())checkSession();
+</script>
+</body>
+</html>
